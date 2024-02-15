@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://ckb5tkkiiame6"]
+
+[ext_resource type="Script" path="res://cell.gd" id="1_y2ll6"]
+
+[node name="Cell" type="ColorRect"]
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_y2ll6")
+metadata/_edit_lock_ = true
