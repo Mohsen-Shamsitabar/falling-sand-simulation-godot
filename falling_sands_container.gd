@@ -11,8 +11,8 @@ var rng = RandomNumberGenerator.new()
 var cell_size = Vector2(cell_width,cell_width)
 # @export var pen_size = Vector2(3,3)
 
-var color_code: int = 50
-var reverse: bool = false
+var color_code: float = 0
+var empty_value: float = -1
 var cells: Array = []
 var values: Array = []
 
@@ -65,19 +65,14 @@ func handle_click():
 		var clicked_cell_position: Vector2 = IX(mouse_position)
 		var clicked_cell_value: float = values[clicked_cell_position.y - 1][clicked_cell_position.x - 1]
 		
-		if(clicked_cell_value == 0):
+		if(clicked_cell_value == empty_value):
 			values[clicked_cell_position.y - 1][clicked_cell_position.x - 1] = color_code
 			update_cells()
 
-			if(color_code >= 255):
-				reverse = true
-			elif(color_code <= 50):
-				reverse = false
-
-			if(reverse):
-				color_code = clampi(color_code-1, 50, 255)
-			else:
-				color_code = clampi(color_code+1, 50, 255)
+			if(color_code >= 359):
+				color_code = 0
+			
+			color_code = clampf(color_code + 0.25, 0, 359)
 		
 
 
@@ -107,8 +102,8 @@ func update_values():
 
 			var value: float = values[i][j]
 			
-			if(value == 0):
-				# value is 0
+			if(value == empty_value):
+				# value is empty_value
 				continue
 			
 			if(i + 1 >= len(values)):
@@ -117,21 +112,21 @@ func update_values():
 			
 			var value_below: float = values[i+1][j]
 			
-			if(value_below == 0):
-				# value_below is 0
-				new_values[i][j] = 0
+			if(value_below == empty_value):
+				# value_below is empty_value
+				new_values[i][j] = empty_value
 				new_values[i+1][j] = color_code
 			else:
 				# value_below is 1
 				if(j+1 >= len(values[0])):
-					if(values[i+1][j-1] == 0):
-						new_values[i][j] = 0
+					if(values[i+1][j-1] == empty_value):
+						new_values[i][j] = empty_value
 						new_values[i+1][j-1] = color_code
 
 					continue
 				elif(j-1 < 0):
-					if(values[i+1][j+1] == 0):
-						new_values[i][j] = 0
+					if(values[i+1][j+1] == empty_value):
+						new_values[i][j] = empty_value
 						new_values[i+1][j+1] = color_code
 
 					continue
@@ -140,11 +135,11 @@ func update_values():
 				var left_value: float = values[i+1][j-1]
 				var rng_number = rng.randi_range(0,1)
 				
-				if(rng_number == 0 and right_value == 0):
-					new_values[i][j] = 0
+				if(rng_number == 0 and right_value == empty_value):
+					new_values[i][j] = empty_value
 					new_values[i+1][j+1] = color_code
-				elif(rng_number == 1 and left_value == 0):
-					new_values[i][j] = 0
+				elif(rng_number == 1 and left_value == empty_value):
+					new_values[i][j] = empty_value
 					new_values[i+1][j-1] = color_code
 			
 	values = new_values
