@@ -16,6 +16,7 @@ var empty_value: float = -1
 var cells: Array = []
 var values: Array = []
 
+var a:InputEventScreenDrag = InputEventScreenDrag.new()
 # =============================================== #
 
 
@@ -34,6 +35,27 @@ func make_matrix(row: int, col: int):
 
 func IX(vector: Vector2):
 	return Vector2(ceil(vector.x / cell_size.x), ceil(vector.y / cell_size.y))
+
+
+func _input(event):
+	if event is InputEventScreenDrag:
+		if event.is_pressed():
+			var drag_position: Vector2 = event.position
+			drag_position.x = clamp(drag_position.x, 0, container_width)
+			drag_position.y = clamp(drag_position.y, 0, container_height)
+			var clicked_cell_position: Vector2 = IX(drag_position)
+			var clicked_cell_value: float = values[clicked_cell_position.y - 1][clicked_cell_position.x - 1]
+			
+			if(clicked_cell_value == empty_value):
+				values[clicked_cell_position.y - 1][clicked_cell_position.x - 1] = color_code
+				update_cells()
+
+				if(color_code >= 359):
+					color_code = 0
+				
+				color_code = clampf(color_code + 0.25, 0, 359)
+
+
 
 
 func _ready():
