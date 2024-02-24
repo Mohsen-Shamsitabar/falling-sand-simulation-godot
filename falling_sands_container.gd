@@ -1,7 +1,6 @@
 extends Container
 
 const cell_scene: PackedScene = preload("res://cell.tscn")
-var rng = RandomNumberGenerator.new()
 
 @onready var container = get_node(".")
 
@@ -16,7 +15,6 @@ var empty_value: float = -1
 var cells: Array = []
 var values: Array = []
 
-var a:InputEventScreenDrag = InputEventScreenDrag.new()
 # =============================================== #
 
 
@@ -54,7 +52,6 @@ func _input(event):
 					color_code = 0
 				
 				color_code = clampf(color_code + 0.25, 0, 359)
-
 
 
 
@@ -155,12 +152,11 @@ func update_values():
 				
 				var right_value: float = values[i+1][j+1]
 				var left_value: float = values[i+1][j-1]
-				var rng_number = rng.randi_range(0,1)
 				
-				if(rng_number == 0 and right_value == empty_value):
+				if(right_value == empty_value):
 					new_values[i][j] = empty_value
 					new_values[i+1][j+1] = color_code
-				elif(rng_number == 1 and left_value == empty_value):
+				elif(left_value == empty_value):
 					new_values[i][j] = empty_value
 					new_values[i+1][j-1] = color_code
 			

@@ -8,5 +8,7 @@ offset_bottom = 2000.0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 script = ExtResource("1_hcf6p")
+container_width = 1500
+container_height = 1500
 metadata/_edit_group_ = true
 metadata/_edit_lock_ = true
