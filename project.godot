@@ -32,6 +32,15 @@ click={
 
 pointing/emulate_touch_from_mouse=true
 
+[layer_names]
+
+2d_render/layer_1="bounds"
+2d_render/layer_2="sand"
+2d_physics/layer_1="bounds"
+2d_navigation/layer_1="bounds"
+2d_physics/layer_2="sand"
+2d_navigation/layer_2="sand"
+
 [rendering]
 
 renderer/rendering_method="mobile"

@@ -1,15 +1,15 @@
-extends Container
+extends Control
 
-const cell_scene: PackedScene = preload("res://cell.tscn")
 
-@onready var container = get_node(".")
+@onready var container: Control = get_node(".")
+@onready var tileMap: TileMap = get_node("TileMap")
+@onready var background: ColorRect = get_node("Background")
 
-@export var container_width = 2000
-@export var container_height = 2000
-@export var cell_width = 25
-var cell_size = Vector2(cell_width,cell_width)
+@export var container_size = 2000
+@export var cell_size = 10
 # @export var pen_size = Vector2(3,3)
 
+var grid_size: int = container_size / cell_size
 var color_code: float = 0
 var empty_value: float = -1
 var cells: Array = []
@@ -17,152 +17,139 @@ var values: Array = []
 
 # =============================================== #
 
-
-func make_matrix(row: int, col: int):
-	var matrix = []
-	for i: float in range(0, row):
-		var temp_row: Array = []
-		
-		for j: float in range(0, col):
-			temp_row.append(0)
-		
-		matrix.append(temp_row)
-
-	return matrix
-
-
-func IX(vector: Vector2):
-	return Vector2(ceil(vector.x / cell_size.x), ceil(vector.y / cell_size.y))
-
-
-func _input(event):
-	if event is InputEventScreenDrag:
-		if event.is_pressed():
-			var drag_position: Vector2 = event.position
-			drag_position.x = clamp(drag_position.x, 0, container_width)
-			drag_position.y = clamp(drag_position.y, 0, container_height)
-			var clicked_cell_position: Vector2 = IX(drag_position)
-			var clicked_cell_value: float = values[clicked_cell_position.y - 1][clicked_cell_position.x - 1]
-			
-			if(clicked_cell_value == empty_value):
-				values[clicked_cell_position.y - 1][clicked_cell_position.x - 1] = color_code
-				update_cells()
-
-				if(color_code >= 359):
-					color_code = 0
-				
-				color_code = clampf(color_code + 0.25, 0, 359)
-
-
-
 func _ready():
-	for i: float in range(0, container_height, cell_size.y):
-	
-		var cells_row: Array[ColorRect] = []
+	tileMap.tile_set.tile_size = Vector2i(cell_size, cell_size)
+	background.size = Vector2(container_size, container_size)
+
+	for x in grid_size:
+
+		var cells_row: Array = []
 		var values_row: Array[float] = []
-		
-		for j: float in range(0, container_width, cell_size.x):
-			var point: Vector2 = Vector2(j, i)
-			var cell: ColorRect = cell_scene.instantiate()
-			
-			cell.global_position = point
-			cell.size = cell_size
-			container.add_child(cell)
-			cells_row.append(cell)
-			values_row.append(cell.value)
+
+		for y in grid_size:
+
+			cells_row.append(null)
+			values_row.append(empty_value)
 		
 		cells.append(cells_row)
 		values.append(values_row)
 		
 
+func is_clicked_cell_in_bounds(cell_position: Vector2i):
+	return (
+		cell_position.x >= 0 
+		and 
+		cell_position.x < grid_size 
+		and 
+		cell_position.y >= 0 
+		and 
+		cell_position.y < grid_size
+	)
+
 
 func handle_click():
 	if(Input.is_action_pressed("click")):
-		var mouse_position: Vector2 = get_global_mouse_position()
-		mouse_position.x = clamp(mouse_position.x, 0, container_width)
-		mouse_position.y = clamp(mouse_position.y, 0, container_height)
-		var clicked_cell_position: Vector2 = IX(mouse_position)
-		var clicked_cell_value: float = values[clicked_cell_position.y - 1][clicked_cell_position.x - 1]
+		var clicked_cell: Vector2i = tileMap.local_to_map(get_global_mouse_position())
+
+		if(not is_clicked_cell_in_bounds(clicked_cell)):
+			printerr("out")
+			return
 		
+		var clicked_cell_value: float = values[clicked_cell.x][clicked_cell.y]
+
 		if(clicked_cell_value == empty_value):
-			values[clicked_cell_position.y - 1][clicked_cell_position.x - 1] = color_code
-			update_cells()
+			values[clicked_cell.x][clicked_cell.y] = color_code
+			# render_cells()
 
 			if(color_code >= 359):
 				color_code = 0
 			
-			color_code = clampf(color_code + 0.25, 0, 359)
-		
+			color_code = clampf(color_code + 0.25, 0, 359)		
 
 
-func update_cells():
-	for i in range(0, len(values)):
-		for j in range(0, len(values[0])):
-			cells[i][j].value = values[i][j]
+func render_cells():
 
+	for x in grid_size:
 
+		for y in grid_size:
 
-func print_col(array: Array, col: int, err: bool):
-	for i in range(0, len(array)):
-		if(err):
-			printerr(array[i][col])
-		else:
-			print(array[i][col])
+			var value: float = values[x][y]
 
+			if(value >= 0):
+
+				if(cells[x][y] != null):
+					continue
+
+				var cell = ColorRect.new()
+
+				cell.global_position = tileMap.map_to_local(Vector2i(x, y))
+				cell.size = Vector2(cell_size, cell_size)
+				cell.color = Color.from_hsv(value / 359.0, 0.75, 1.0)
+
+				container.add_child(cell)
+				cells[x][y] = cell
+			else:
+				if(cells[x][y] == null):
+					continue
+
+				cells[x][y].queue_free()
 
 
 func update_values():
 	
 	var new_values: Array = values.duplicate(true)
-	
-	for i in range(0, len(values)):
 
-		for j in range(0, len(values[0])):
+	for x in grid_size:
 
-			var value: float = values[i][j]
+		for y in grid_size:
+
+			var value: float = values[x][y]
 			
 			if(value == empty_value):
 				# value is empty_value
 				continue
 			
-			if(i + 1 >= len(values)):
+			if(y + 1 >= grid_size):
 				# on ground
 				continue
 			
-			var value_below: float = values[i+1][j]
+			var value_below: float = values[x][y+1]
 			
 			if(value_below == empty_value):
 				# value_below is empty_value
-				new_values[i][j] = empty_value
-				new_values[i+1][j] = color_code
+				new_values[x][y] = empty_value
+				new_values[x][y+1] = color_code
 			else:
 				# value_below is 1
-				if(j+1 >= len(values[0])):
-					if(values[i+1][j-1] == empty_value):
-						new_values[i][j] = empty_value
-						new_values[i+1][j-1] = color_code
+				if(x+1 >= grid_size):
+					# right is full
+					if(values[x-1][y+1] == empty_value):
+						new_values[x][y] = empty_value
+						new_values[x-1][y+1] = color_code
 
 					continue
-				elif(j-1 < 0):
-					if(values[i+1][j+1] == empty_value):
-						new_values[i][j] = empty_value
-						new_values[i+1][j+1] = color_code
+				elif(x-1 < 0):
+					# left is full
+					if(values[x+1][y+1] == empty_value):
+						new_values[x][y] = empty_value
+						new_values[x+1][y+1] = color_code
 
 					continue
 				
-				var right_value: float = values[i+1][j+1]
-				var left_value: float = values[i+1][j-1]
-				
+				var right_value: float = values[x+1][y+1]
+				var left_value: float = values[x-1][y+1]
+
 				if(right_value == empty_value):
-					new_values[i][j] = empty_value
-					new_values[i+1][j+1] = color_code
+					new_values[x][y] = empty_value
+					new_values[x+1][y+1] = color_code
+					continue
 				elif(left_value == empty_value):
-					new_values[i][j] = empty_value
-					new_values[i+1][j-1] = color_code
-			
+					new_values[x][y] = empty_value
+					new_values[x-1][y+1] = color_code
+					continue
+
 	values = new_values
-	update_cells()
-				
+	render_cells()				
 
 			
 func _process(_delta):
